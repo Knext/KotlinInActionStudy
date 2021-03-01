@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 internal class NullTypeTest {
@@ -6,7 +7,7 @@ internal class NullTypeTest {
         fun strLenSafe(s:String?) :Int = /*if (s!= null) s.length else 0*/ s?.length ?: 0
 
         val x:String? = null
-        println(strLenSafe(x))
+        assertEquals(0, strLenSafe(x))
     }
 
     @Test
@@ -15,7 +16,7 @@ internal class NullTypeTest {
             val allCaps: String? = s?.toUpperCase()
             println(allCaps)
         }
-        printAllCaps(null)
+        assertEquals(kotlin.Unit, printAllCaps(null))
     }
 
     @Test
@@ -25,8 +26,8 @@ internal class NullTypeTest {
 
         val ceo = Employee("Boss", null)
         val developer = Employee("Developer", ceo)
-        println(managerName(developer))
-        println(managerName(ceo))
+        assertEquals("Boss",managerName(developer))
+        assertEquals(null, managerName(ceo))
     }
 
     @Test
@@ -35,12 +36,19 @@ internal class NullTypeTest {
         class Company(val name:String, val address:Address?)
         class Person(val name:String, val company: Company?)
 
+        val unknown = "Unknown"
         fun Person.countryName():String {
-            return company?.address?.country ?: "Unknown"
+            return company?.address?.country ?: unknown
         }
+
         val person = Person("Person", null)
-        println(person.countryName())
+        assertEquals(unknown, person.countryName())
     }
 
-
+    @Test
+    fun test_elvis() {
+        fun strLenSafe(s:String?) :Int = s?.length ?: 0
+        assertEquals(3, strLenSafe("abc"))
+        assertEquals(0, strLenSafe(null))
+    }
 }
