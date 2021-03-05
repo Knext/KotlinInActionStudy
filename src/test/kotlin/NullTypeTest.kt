@@ -1,5 +1,4 @@
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class NullTypeTest {
@@ -118,5 +117,28 @@ internal class NullTypeTest {
         assertEquals("input is blank", verify(null))
         assertEquals("input is blank", verify(" "))
         assertEquals("test input", verify("test input"))
+    }
+
+    @Test
+    fun test_primitiveType() {
+        data class Person(val name:String, val age:Int? = null) {
+            fun isOlderThan(other:Person) :Boolean? {
+                if (age == null || other.age == null)  {
+                    return null
+                }
+                return age > other.age
+            }
+        }
+
+        assertEquals(false, Person("Sam", 35).isOlderThan(Person("Amy", 42)))
+        assertEquals(null, Person("Sam", 35).isOlderThan(Person("Jane")))
+    }
+
+    @Test
+    fun test_type() {
+        val x = 1
+        val list = listOf(1L, 2L, 3L)
+        //println(x in list) //compile error, 숫자에 대해서 묵시적  타입 변환 안됨.
+        println(x.toLong() in list)
     }
 }
