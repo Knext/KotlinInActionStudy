@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.beans.PropertyChangeListener
+import java.beans.PropertyChangeSupport
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -99,6 +101,71 @@ internal class OverrideTest {
         val rects = Rectangle(MutablePoint(10,20), MutablePoint(50,50))
         assertTrue(MutablePoint(20,30) in rects)
         assertFalse(MutablePoint(5,5) in rects)
+    }
 
+    @Test
+    fun lazyLoading() {
+        class Email(val address:String)
+        class Person(val name: String) {
+            //by lazy 구문으로 lazy loading 처리 가
+            val emails by lazy {loadEmails(this)}
+            /*
+            private var _emails: List<Email>? = null
+            val emails: List<Email>
+            get() {
+                if (_emails == null) {
+                    _emails = loadEmails(this)
+                }
+                return _emails!!
+            }
+             */
+            fun loadEmails(person: Person): List<Email> {
+                println("Load ${person.name} emails")
+                return listOf();
+            }
+        }
+
+        val p = Person("ABC")
+        p.emails
+        p.emails
+    }
+
+    @Test
+    fun test_delegate() {
+        open class PropertyChangeAware {
+            protected val changeSupport = PropertyChangeSupport(this)
+
+            fun addPropertyChangeListener(listener: PropertyChangeListener) {
+                changeSupport.addPropertyChangeListener(listener)
+            }
+
+            fun removePropertyChangeListener(listener: PropertyChangeListener) {
+                changeSupport.removePropertyChangeListener(listener)
+            }
+        }
+
+        class Person(val name:String, age:Int, salary:Int): PropertyChangeAware() {
+            var age: Int = age
+                set(newValue) {
+                    val oldValue = field
+                    field = newValue
+                    changeSupport.firePropertyChange("age", oldValue, newValue)
+                }
+            var salary:Int = salary
+                set(newValue) {
+                    val oldValue = field
+                    field = newValue
+                    changeSupport.firePropertyChange("salary", oldValue, newValue)
+                }
+        }
+
+        val p = Person("ABC", 32, 2000)
+        p.addPropertyChangeListener(PropertyChangeListener { event ->
+            println("Property ${event.propertyName} changed" +
+            "from ${event.oldValue} to ${event.newValue}")
+        })
+
+        p.age = 35
+        p.salary = 2100
     }
 }
