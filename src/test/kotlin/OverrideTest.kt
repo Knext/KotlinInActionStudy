@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
+import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -131,34 +132,31 @@ internal class OverrideTest {
         p.emails
     }
 
-    class ObservableProperty(var propValue:Int, val changeSupport: PropertyChangeSupport) {
-        operator fun getValue(p: Person, prop:KProperty<*>):Int = propValue
-        operator fun setValue(p: Person, prop:KProperty<*>, newValue:Int) {
-            val oldValue = propValue
-            propValue = newValue
-            changeSupport.firePropertyChange(prop.name, oldValue, newValue)
-        }
-    }
 
-    open class PropertyChangeAware {
-        protected val changeSupport = PropertyChangeSupport(this)
-
-        fun addPropertyChangeListener(listener: PropertyChangeListener) {
-            changeSupport.addPropertyChangeListener(listener)
-        }
-
-        fun removePropertyChangeListener(listener: PropertyChangeListener) {
-            changeSupport.removePropertyChangeListener(listener)
-        }
-    }
-
-    class Person(val name:String, age:Int, salary:Int): PropertyChangeAware() {
-        var age: Int by ObservableProperty(age, changeSupport)
-        var salary:Int by ObservableProperty(age, changeSupport)
-    }
 
     @Test
     fun test_delegate() {
+        open class PropertyChangeAware {
+            protected val changeSupport = PropertyChangeSupport(this)
+
+            fun addPropertyChangeListener(listener: PropertyChangeListener) {
+                changeSupport.addPropertyChangeListener(listener)
+            }
+
+            fun removePropertyChangeListener(listener: PropertyChangeListener) {
+                changeSupport.removePropertyChangeListener(listener)
+            }
+        }
+
+        class Person(val name:String, age:Int, salary:Int): PropertyChangeAware() {
+            private val observer = {
+                    prop:KProperty<*>, oldValue:Int, newValue:Int ->
+                changeSupport.firePropertyChange(prop.name, oldValue, newValue)
+            }
+            var age: Int by Delegates.observable(age, observer)
+            var salary:Int by Delegates.observable(salary, observer)
+        }
+
         val p = Person("ABC", 32, 2000)
         p.addPropertyChangeListener(PropertyChangeListener { event ->
             println("Property ${event.propertyName} changed" +
